@@ -14,4 +14,8 @@ This just serves as a point of practice with pandas, matplotlib, and tensorflow 
     - Creating and visualizing a lot of info on the dataset before testing the model
     - Death statistics based on sex
     - Grouping passengers by age and seperately by class as well
+    - creating several graph representations of models
 - Tensorflow for the regression model and actual algorithm
+    - Setting up featured columns & input function for Linear Classification
+    - training on main dataset
+    - predicting probabilities with trained model and evaluating data
