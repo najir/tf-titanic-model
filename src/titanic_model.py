@@ -42,7 +42,10 @@ trainClassPlot = dfTrain['class'].value_counts().plot(kind = "barh")
 #Creates the mean value of survived and sex, plots on bar graph, also sets custom label
 trainSexMeanPlot = pd.concat([dfTrain, y_train], axis=1).groupby('sex').survived.mean().plot(kind='barh').set_xlabel('% Survived')
 
+ageXgender = tf.feature_column.crossed_column(['age', 'sex'], hash_bucket_size=100)
+
 featureColumn = []
+derivedFeatureColumn = [ageXgender]
 
 #Iterate on list of columns, append feature columns for each one in lists. Used for estimators
 for featureName in CAT_COLUMNS:
@@ -50,5 +53,39 @@ for featureName in CAT_COLUMNS:
     featureColumn.append(tf.feature_column.categrorical_column_with_vocabulary_lists(featureName, vocab))
 for featureName in NUM_COLUMNS:
     featureColumn.append(tf.feature_column.numeric_column(featureName, dtype=tf.float32))
+
+
+#Creates inputs for our training data and evaluation
+trainInput = MakeInputFunction(dfTrain, y_train)
+evalInput = MakeInputFunction(dfEval, y_eval, 1, False)
+
+#Create the actual estimator, passing in our feature columns to the linear classification
+linearEstim = tf.estimator.LinearClassification(feature_columns=featureColumn+derivedFeatureColumn)
+
+#Train the given model using out training inputs, then evaluate it with out eval inputs
+linearEstim.train(trainInput)
+result = linearEstim.evaluate(evalInput)
+
+print(result['accuracy'])
+
+evaluatedPredictions = list(linearEstim.predict(evalInput))
+probabilities = pd.series(pred['probabilities'][1] for pred in evaluatedPredictions)
+
+probHistogram = probabilities.plot(kind='hist', bins=20, title='Predicted Probabilities')
+
+
+
+#Converts our Pandas DataFrame into a usable tensorflow dataframe object
+def MakeInputFunction(funcData, funcLabel, epochs=10, shuffle=true, batch=32):
+    def InputFunction():
+        ds = tf.data.Dataset.from_tensor_slices((dict(funcData), funcLabel))
+        if shuffle:
+            ds = ds.shuffle(1000)
+        ds = ds.batch(batch).repeat(epochs)
+        return ds
+    return InputFunction
+
+
+
 
 
